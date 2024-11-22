@@ -27,12 +27,21 @@ jobs:
           cd server
           npm install
 
-      # Step 4: Temporarily Adjust tsconfig.json
+      # Step 4: Temporarily Relax TypeScript Config
       - name: Relax TypeScript Config
         run: |
           cd server
-          jq '.compilerOptions += {"strictNullChecks": false, "noImplicitAny": false}' tsconfig.json > tsconfig.temp.json
-          mv tsconfig.temp.json tsconfig.json
+          echo '{
+            "extends": "../tsconfig.json",
+            "compilerOptions": {
+              "rootDir": "src",
+              "outDir": "dist",
+              "strictNullChecks": false,
+              "noImplicitAny": false
+            },
+            "include": ["src"],
+            "typeRoots": ["./node_modules/@types", "./src/types"]
+          }' > tsconfig.json
 
       # Step 5: Build Server
       - name: Build Server
