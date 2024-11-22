@@ -31,7 +31,7 @@ jobs:
       - name: Relax TypeScript Config
         run: |
           cd server
-          jq '.compilerOptions.strictNullChecks = false | .compilerOptions.noImplicitAny = false' tsconfig.json > tsconfig.temp.json
+          jq '.compilerOptions += {"strictNullChecks": false, "noImplicitAny": false}' tsconfig.json > tsconfig.temp.json
           mv tsconfig.temp.json tsconfig.json
 
       # Step 5: Build Server
