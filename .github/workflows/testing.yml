@@ -1,0 +1,54 @@
+name: Checking Tests
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  test:
+    name: Run Cypress Component Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2:
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.15.1
+
+      # Step 3:
+      - name: Install Server Dependencies
+        run: npm install
+        working-directory: ./server
+
+      # Step 4:
+      - name: Install Client Dependencies
+        run: npm install
+        working-directory: ./client
+
+      # Step 5:
+      - name: Install Cypress 13.13.0
+        run: npm install cypress@13.13.0 --save-dev
+        working-directory: ./client
+
+      # Step 6:
+      - name: Build Client
+        run: npm run build
+        working-directory: ./client
+
+      # Step 7:
+      - name: Start Server and Client
+        run: npm run develop > server.log 2>&1 &
+
+      # Step 8:
+      - name: Wait for Server to Start
+        run: npx wait-on http://localhost:3001
+
+      # Step 9:
+      - name: Run Cypress Component Tests
+        run: npm run test-component
