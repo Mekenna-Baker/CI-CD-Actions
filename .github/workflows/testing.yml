@@ -11,44 +11,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1:
+      # Step 1: Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2:
-      - name: Set Up Node.js
+      # Step 2: Set Up Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.15.1
 
-      # Step 3:
+      # Step 3: Install Server Dependencies
       - name: Install Server Dependencies
-        run: npm install
-        working-directory: ./server
+        run: |
+          cd server
+          npm install
 
-      # Step 4:
+      # Step 4: Install Client Dependencies
       - name: Install Client Dependencies
-        run: npm install
-        working-directory: ./client
+        run: |
+          cd client
+          npm install
 
-      # Step 5:
-      - name: Install Cypress 13.13.0
-        run: npm install cypress@13.13.0 --save-dev
-        working-directory: ./client
-
-      # Step 6:
+      # Step 5: Build Client
       - name: Build Client
-        run: npm run build
-        working-directory: ./client
+        run: |
+          cd client
+          npm run build
 
-      # Step 7:
+      # Step 6: Start Server and Client
       - name: Start Server and Client
-        run: npm run develop > server.log 2>&1 &
+        run: npm run develop &
 
-      # Step 8:
+      # Step 7: Wait for Server to Start
       - name: Wait for Server to Start
         run: npx wait-on http://localhost:3001
 
-      # Step 9:
+      # Step 8: Run Cypress Component Tests
       - name: Run Cypress Component Tests
         run: npm run test-component
