@@ -56,3 +56,5 @@ jobs:
       # Step 9: Run Cypress Component Tests
       - name: Run Cypress Component Tests
         run: npm run test-component
+
+        # Small Change
