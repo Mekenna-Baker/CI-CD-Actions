@@ -1,0 +1,63 @@
+name: Run Cypress Component Tests
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Seed Database
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+      run: npm run seed
+
+    - name: Start the server
+      run: |
+        cd server
+        npm install
+        npm run build
+        npm start &
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+
+    - name: Wait for server
+      run: npx wait-on http://localhost:3001
+
+    - name: Start the client
+      run: |
+        cd client
+        npm install
+        npm run build
+        npm start &
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+
+    - name: Wait for client
+      run: npx wait-on http://localhost:3000
+
+    - name: Debug file paths
+      run: ls -R
+
+    - name: Run Cypress Component Tests
+      run: npx cypress run --component
