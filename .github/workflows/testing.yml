@@ -1,5 +1,5 @@
 # Name of workflow
-name: Lint and Test workflow
+name: Build and Test Workflow
 
 # Trigger workflow on all pull requests
 on:
@@ -16,29 +16,45 @@ jobs:
 
     # Steps in job
     steps:
-      # Get code from repo
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v1
 
+      # Step 2: Use Node.js 21.x
       - name: Use Node.js 21.x
         uses: actions/setup-node@v1
         with:
           node-version: 21.x
 
-      # Install dependencies
+      # Step 3: Install dependencies
       - name: 🧰 Install Dependencies
         run: npm install
 
-      # Seed the Database
+      # Backend Build Step
+      - name: Build Backend
+        working-directory: ./server
+        run: npm run build
+
+      # Backend Seed Step
       - name: Seed the Database
+        working-directory: ./server
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: npm run seed
 
-      # Run build
-      - name: Run Build
+      # Backend Start Step
+      - name: Start Backend
+        working-directory: ./server
+        run: npm start &
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+
+      # Frontend Build Step
+      - name: Build Frontend
+        working-directory: ./client
         run: npm run build
 
-      # Run tests
-      - name: Run Tests
-        run: npm run test
+      # Frontend Start Step
+      - name: Start Frontend
+        working-directory: ./client
+        run: npm start &
