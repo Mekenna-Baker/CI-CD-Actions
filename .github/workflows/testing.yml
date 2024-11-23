@@ -36,6 +36,7 @@ jobs:
       run: |
         cd server
         npm install
+        npm run build
         npm start &
       env:
         MONGO_URI: ${{ secrets.MONGO_URI }}
