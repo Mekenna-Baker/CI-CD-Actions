@@ -37,7 +37,8 @@ jobs:
               "rootDir": "src",
               "outDir": "dist",
               "strictNullChecks": false,
-              "noImplicitAny": false
+              "noImplicitAny": false,
+              "exactOptionalPropertyTypes": false
             },
             "include": ["src"],
             "typeRoots": ["./node_modules/@types", "./src/types"]
