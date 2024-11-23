@@ -1,60 +1,62 @@
-# Name of workflow
-name: Build and Test Workflow
+name: Run Cypress Component Tests
 
-# Trigger workflow on all pull requests
 on:
   pull_request:
     branches:
       - develop
-      - staging
 
-# Jobs to carry out
 jobs:
   test:
-    # Operating system to run job on
     runs-on: ubuntu-latest
 
-    # Steps in job
+    services:
+      mongo:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+
     steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
-        uses: actions/checkout@v1
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      # Step 2: Use Node.js 21.x
-      - name: Use Node.js 21.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 21.x
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
 
-      # Step 3: Install dependencies
-      - name: 🧰 Install Dependencies
-        run: npm install
+    - name: Install dependencies
+      run: npm install
 
-      # Backend Build Step
-      - name: Build Backend
-        working-directory: ./server
-        run: npm run build
+    - name: Seed Database
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+      run: npm run seed
 
-      # Backend Seed Step
-      - name: Seed the Database
-        working-directory: ./server
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: npm run seed
+    - name: Start the server
+      run: |
+        cd server
+        npm install
+        npm start &
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
 
-      # Backend Start Step
-      - name: Start Backend
-        working-directory: ./server
-        run: npm start &
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
+    - name: Wait for server
+      run: npx wait-on http://localhost:3001
 
-      # Frontend Build Step
-      - name: Build Frontend
-        working-directory: ./client
-        run: npm run build
+    - name: Start the client
+      run: |
+        cd client
+        npm install
+        npm run build
+        npm start &
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
 
-      # Frontend Start Step
-      - name: Start Frontend
-        working-directory: ./client
-        run: npm start &
+    - name: Wait for client
+      run: npx wait-on http://localhost:3000
+
+    - name: Debug file paths
+      run: ls -R
+
+    - name: Run Cypress Component Tests
+      run: npx cypress run --component
