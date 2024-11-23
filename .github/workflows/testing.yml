@@ -10,16 +10,27 @@ jobs:
     name: Run Cypress Component Tests
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       # Step 1: Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set Up Node.js (Switch to Node.js 18 for compatibility)
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.15.1
 
       # Step 3: Install Server Dependencies
       - name: Install Server Dependencies
@@ -31,18 +42,8 @@ jobs:
       - name: Relax TypeScript Config
         run: |
           cd server
-          echo '{
-            "extends": "../tsconfig.json",
-            "compilerOptions": {
-              "rootDir": "src",
-              "outDir": "dist",
-              "strictNullChecks": false,
-              "noImplicitAny": false,
-              "exactOptionalPropertyTypes": false
-            },
-            "include": ["src"],
-            "typeRoots": ["./node_modules/@types", "./src/types"]
-          }' > tsconfig.json
+          jq '.compilerOptions.strictNullChecks = false | .compilerOptions.noImplicitAny = false' tsconfig.json > tsconfig.temp.json
+          mv tsconfig.temp.json tsconfig.json
 
       # Step 5: Build Server
       - name: Build Server
@@ -54,39 +55,32 @@ jobs:
       - name: Install Client Dependencies
         run: |
           cd client
-          npm install --force
+          npm install
 
-      # Step 7: Set Client Environment Variables
-      - name: Set Client Environment Variables
-        run: |
-          echo "VITE_API_URL=https://your-api-url" >> client/.env
-
-      # Step 8: Build Client
+      # Step 7: Build Client
       - name: Build Client
         run: |
           cd client
           npm run build
 
-      # Step 9: Install wait-on (if not globally available)
-      - name: Install wait-on
-        run: npm install -g wait-on
-
-      # Step 10: Start Server and Client
-      - name: Start Server and Client
+      # Step 8: Start Server
+      - name: Start Server
         run: |
           cd server
-          nohup npm run start &  # Start the server
-          cd ../client
-          nohup npm run dev &    # Start the client
+          npm run start &
+        env:
+          MONGODB_URI: 'mongodb://127.0.0.1:27017/techquiz'
 
-      # Step 11: Wait for Server and Client to Start
-      - name: Wait for Server and Client to Start
+      # Step 9: Start Client
+      - name: Start Client
         run: |
-          npx wait-on http://localhost:3001 http://localhost:3001 --timeout 30000
+          cd client
+          npm run dev &
 
-      # Step 12: Run Cypress Component Tests
+      # Step 10: Wait for Server and Client to Start
+      - name: Wait for Server and Client to Start
+        run: npx wait-on http://localhost:3001 http://localhost:3000 --timeout 30000
+
+      # Step 11: Run Cypress Component Tests
       - name: Run Cypress Component Tests
         run: npm run test-component
-
-
-        # Small Change
