@@ -26,16 +26,13 @@ jobs:
           node-version: 21.x
 
       # Install dependencies
-      - name: 🧰 Install Deps
+      - name: 🧰 Install Dependencies
         run: npm install
-
-      # Set environment variables from .env file
-      - name: Load .env Variables
-        run: |
-          cat .env >> $GITHUB_ENV
 
       # Seed the Database
       - name: Seed the Database
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
         run: npm run seed
 
       # Run build
@@ -45,6 +42,3 @@ jobs:
       # Run tests
       - name: Run Tests
         run: npm run test
-      
-
-        # hello
