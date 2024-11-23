@@ -15,11 +15,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set Up Node.js
+      # Step 2: Set Up Node.js (Switch to Node.js 18 for compatibility)
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.15.1
+          node-version: 18.x
 
       # Step 3: Install Server Dependencies
       - name: Install Server Dependencies
@@ -27,7 +27,7 @@ jobs:
           cd server
           npm install
 
-      # Step 4: Temporarily Relax TypeScript Config
+      # Step 4: Relax TypeScript Config
       - name: Relax TypeScript Config
         run: |
           cd server
@@ -54,27 +54,39 @@ jobs:
       - name: Install Client Dependencies
         run: |
           cd client
-          npm install
+          npm install --force
 
-      # Step 7: Build Client
+      # Step 7: Set Client Environment Variables
+      - name: Set Client Environment Variables
+        run: |
+          echo "VITE_API_URL=https://your-api-url" >> client/.env
+
+      # Step 8: Build Client
       - name: Build Client
         run: |
           cd client
           npm run build
 
-          - name: Start Server and Client
-          run: |
-            cd server
-            nohup npm run start &  # Start the server in the background
-            cd ../client
-            nohup npm run dev &    # Start the client in the background
+      # Step 9: Install wait-on (if not globally available)
+      - name: Install wait-on
+        run: npm install -g wait-on
 
-      # Step 9: Wait for Server to Start
-      - name: Wait for Server to Start
-        run: npx wait-on http://localhost:3001
+      # Step 10: Start Server and Client
+      - name: Start Server and Client
+        run: |
+          cd server
+          nohup npm run start &  # Start the server
+          cd ../client
+          nohup npm run dev &    # Start the client
 
-      # Step 10: Run Cypress Component Tests
+      # Step 11: Wait for Server and Client to Start
+      - name: Wait for Server and Client to Start
+        run: |
+          npx wait-on http://localhost:3001 http://localhost:3001 --timeout 30000
+
+      # Step 12: Run Cypress Component Tests
       - name: Run Cypress Component Tests
         run: npm run test-component
+
 
         # Small Change
