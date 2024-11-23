@@ -7,80 +7,43 @@ on:
 
 jobs:
   test:
-    name: Run Cypress Component Tests
+    name: Checking Tests
     runs-on: ubuntu-latest
 
     services:
       mongodb:
-        image: mongo:latest
+        image: mongo:5.0
         ports:
           - 27017:27017
         options: >-
-          --health-cmd="mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-cmd="mongo --eval 'db.runCommand({ ping: 1 })'"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      # Step 1: Checkout Repository
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.15.1
+          node-version: 20.x
 
-      # Step 3: Install Server Dependencies
-      - name: Install Server Dependencies
-        run: |
-          cd server
-          npm install
+      - name: Install dependencies
+        run: npm install
 
-      # Step 4: Relax TypeScript Config
-      - name: Relax TypeScript Config
-        run: |
-          cd server
-          jq '.compilerOptions.strictNullChecks = false | .compilerOptions.noImplicitAny = false' tsconfig.json > tsconfig.temp.json
-          mv tsconfig.temp.json tsconfig.json
+      - name: Build App
+        run: npm run build
 
-      # Step 5: Build Server
-      - name: Build Server
-        run: |
-          cd server
-          npm run build
+      - name: Seed database
+        run: npm run seed
 
-      # Step 6: Install Client Dependencies
-      - name: Install Client Dependencies
-        run: |
-          cd client
-          npm install
+      - name: Start server
+        run: npm run start &
 
-      # Step 7: Build Client
-      - name: Build Client
-        run: |
-          cd client
-          npm run build
+      - name: Wait for server to start
+        run: npx wait-on http://localhost:3001
 
-      # Step 8: Start Server
-      - name: Start Server
-        run: |
-          cd server
-          npm run start &
-        env:
-          MONGODB_URI: 'mongodb://127.0.0.1:27017/techquiz'
-
-      # Step 9: Start Client
-      - name: Start Client
-        run: |
-          cd client
-          npm run dev &
-
-      # Step 10: Wait for Server and Client to Start
-      - name: Wait for Server and Client to Start
-        run: npx wait-on http://localhost:3001 http://localhost:3000 --timeout 30000
-
-      # Step 11: Run Cypress Component Tests
-      - name: Run Cypress Component Tests
+      - name: Run cypress component tests
         run: npm run test-component
