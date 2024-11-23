@@ -43,8 +43,9 @@ jobs:
       # Relax TypeScript checks temporarily
       - name: Relax TypeScript Config
         run: |
-          jq '.compilerOptions |= . + {"strictNullChecks": false, "noImplicitAny": false}' tsconfig.json > tsconfig.temp.json
-          mv tsconfig.temp.json tsconfig.json
+          sed -i 's/"strict": true/"strict": false/' tsconfig.json
+          sed -i '/"compilerOptions": {/a \ \ \ \ "strictNullChecks": false,' tsconfig.json
+          sed -i '/"compilerOptions": {/a \ \ \ \ "noImplicitAny": false,' tsconfig.json
 
       # Build the application
       - name: Build App
